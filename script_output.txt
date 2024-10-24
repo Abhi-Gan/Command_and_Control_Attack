@@ -1,0 +1,6 @@
+/Users/abhi/Desktop/UT Austin Courses/2024 Fall/Ethical Hacking/Command_and_Control/target
+total 32
+-rw-r--r--  1 abhi  staff  3693 Oct 23 22:36 backdoor.py
+-rw-r--r--  1 abhi  staff    55 Oct 23 22:35 client_config.json
+-rw-r--r--  1 abhi  staff    39 Oct 23 22:39 run_on_target.sh
+-rw-r--r--  1 abhi  staff    64 Oct 23 00:45 symm_key.txt
