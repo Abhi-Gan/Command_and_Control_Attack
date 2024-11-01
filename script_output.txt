@@ -1,5 +1,4 @@
-/Users/abhi/Desktop/UT Austin Courses/2024 Fall
-cannot change directory to Command_and_Control
+/Users/abhi/Desktop/UT Austin Courses/2024 Fall/Ethical Hacking
 /Users/abhi/Desktop/UT Austin Courses/2024 Fall
 total 592
 drwxr-xr-x@ 6 abhi  staff     192 Oct  7 16:31 Cryptography
