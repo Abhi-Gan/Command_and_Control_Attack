@@ -33,17 +33,23 @@ def get_encrypted_msg(symmetric_key, msg: str):
     return nonce + ct
 
 def decrypt_ct(symmetric_key, msg_ct):
-    # we are given nonce + ct
-    nonce_length = 12
-    nonce = msg_ct[:nonce_length]
-    ct = msg_ct[nonce_length:]
-    # decrypt
-    aesgcm = AESGCM(symmetric_key)
-    dec_msg_bytes = aesgcm.decrypt(nonce=nonce,
-                data=ct,
-                associated_data=None)
-    dec_msg = dec_msg_bytes.decode()
-    return dec_msg
+
+    try:
+        # we are given nonce + ct
+        nonce_length = 12
+        nonce = msg_ct[:nonce_length]
+        ct = msg_ct[nonce_length:]
+        # decrypt
+        aesgcm = AESGCM(symmetric_key)
+        dec_msg_bytes = aesgcm.decrypt(nonce=nonce,
+                    data=ct,
+                    associated_data=None)
+        dec_msg = dec_msg_bytes.decode()
+        return dec_msg
+    except Exception as e:
+        error_msg = f"Error: Received bad message. Client likely has incorrect key!"
+        return error_msg
+
 
 # def receive_msg(connection, buffer_size=1024):
 #     print(f"received message from {connection.getsockname()}")
