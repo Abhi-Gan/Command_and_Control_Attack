@@ -1,12 +1,12 @@
-/Users/abhi/Desktop/UT Austin Courses/2024 Fall/Ethical Hacking/Command_and_Control/target
-total 56
--rw-r--r--  1 abhi  staff  5960 Oct 31 23:21 __init__.py
--rw-r--r--  1 abhi  staff  4096 Oct 31 23:43 backdoor.py
--rw-r--r--  1 abhi  staff    55 Oct 31 23:21 config.json
--rw-r--r--  1 abhi  staff    64 Oct 31 23:21 key.txt
--rw-r--r--  1 abhi  staff    39 Oct 31 23:42 run_on_target.sh
--rw-r--r--  1 abhi  staff    74 Oct 31 23:46 setup.sh
-drwxr-xr-x  7 abhi  staff   224 Oct 31 23:30 venv
-1
-3
-setup.sh: line 5: badcommandwontrun: command not found
+/Users/abhi/Desktop/UT Austin Courses/2024 Fall
+cannot change directory to Command_and_Control
+/Users/abhi/Desktop/UT Austin Courses/2024 Fall
+total 592
+drwxr-xr-x@ 6 abhi  staff     192 Oct  7 16:31 Cryptography
+drwxr-xr-x  9 abhi  staff     288 Oct 22 22:00 Ethical Hacking
+drwxr-xr-x  7 abhi  staff     224 Oct 31 10:54 Tamil I
+-rw-r--r--@ 1 abhi  staff  301500 Sep 15 13:14 ag_schedule_f2024.png
+drwxr-xr-x  8 abhi  staff     256 Oct 12 17:26 iOS Mobile Computing
+2
+/bin/sh: badcommandwontrun: command not found
+4

@@ -1,6 +1,8 @@
 # test commands that are run
 pwd
+cd ..
+pwd
 ls -l
-echo "1"
+echo "2"
 badcommandwontrun
-echo "3"
+echo "4"
